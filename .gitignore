@@ -1,0 +1,18 @@
+# deps
+node_modules
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# editors
+.idea
+.vscode
+*.sublime-*
+
+# general
+.DS_Store
+
+# PBZCOM@NET balance reports
+reports
