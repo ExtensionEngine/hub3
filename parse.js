@@ -1,6 +1,7 @@
 'use strict';
 
 const iconv = require('iconv-lite');
+const { ParserError } = require('./errors');
 
 const identity = arg => arg;
 
@@ -124,34 +125,41 @@ module.exports = parseHUB3;
  * Parse HUB3 bank report
  * @param {Buffer} buffer HUB3 file contents
  * @returns {Array<LineRecord>} array of line records
+ * @throws {ParserError}
  * @see http://com.pbz.hr/download/Format_za_dostavu_izvadaka_klijentima_na_elektronskom_mediju.pdf
  *
  * @example
- * const { parse } = require('@extensionengine/hub3');
+ * const { HUB3Error, parse } = require('@extensionengine/hub3');
+ * const path = require('path');
  * const { readFileSync } = require('fs');
  *
- * const hub3 = readFileSync('./reports/1110779471-20200826.mn');
- * const records = parse(hub3);
- * console.log({ records });
+ * const hub3 = readFileSync(path.join(__dirname, '../reports/1110779471-20200826.mn'));
+ * try {
+ *   const records = parse(hub3);
+ *   console.log({ records });
+ * } catch (err) {
+ *   if (!HUB3Error.isHUB3Error(err)) throw err;
+ *   console.error('Failed to parse report:', err.message);
+ *   process.exit(1);
+ * }
  */
 function parseHUB3(buffer) {
   const content = iconv.decode(buffer, 'win1250');
   const lines = content.split(/\r?\n/g).slice(0, -1);
-  return lines.map((line, lineno) => {
+  return lines.map((line, i) => {
+    const lineno = i + 1;
     const type = line.substr(-3);
     const format = LineFormat[type];
     if (!format) {
-      throw new Error(`Error: Failed to parse HUB3. Unknown line record: type=${type}, lineno=${lineno}`);
+      throw new ParserError('Failed to parse HUB3. Unknown line record:', { type, lineno });
     }
     const data = parseLine(format, line, lineno);
     const isClosingRecord = type === '909';
     if (!isClosingRecord) {
       return data;
     }
-    const expectedCount = data.broj_slogova;
-    const actualCount = lineno + 1;
-    if (actualCount !== expectedCount) {
-      throw new Error(`Error: Failed to parse HUB3. Line record count mismatch: actual=${actualCount}, expected=${expectedCount}`);
+    if (lineno !== data.broj_slogova) {
+      throw new ParserError('Failed to parse HUB3. Line record count mismatch:', { actual: lineno, expected: data.broj_slogova });
     }
     return data;
   });
@@ -170,8 +178,8 @@ function parseLine(sections, line, lineno) {
     acc.__offset += len;
     return acc;
   }, { __offset: 0 });
-  if (data.__offset !== 1000) {
-    throw Error(`Error: Parsing line record failed: offset=${data.__offset}, lineno=${lineno}`);
+  if (data.__offset !== line.length) {
+    throw new ParserError('Parsing line record failed:', { offset: data.__offset, lenght: line.length, lineno });
   }
   delete data.__offset;
   return data;

@@ -24,11 +24,37 @@
 
 #### Table of Contents
 
+-   [HUB3Error](#hub3error)
+    -   [isHUB3Error](#ishub3error)
+        -   [Parameters](#parameters)
+-   [ParserError](#parsererror)
 -   [parseHUB3](#parsehub3)
-    -   [Parameters](#parameters)
+    -   [Parameters](#parameters-1)
     -   [Examples](#examples)
 -   [LineRecord](#linerecord)
     -   [Properties](#properties)
+
+### HUB3Error
+
+**Extends Error**
+
+Base class for all HUB3 specific errors
+
+#### isHUB3Error
+
+Check if error is HUB3 specific error
+
+##### Parameters
+
+-   `err` **[Error](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Error)** error
+
+Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** result
+
+### ParserError
+
+**Extends HUB3Error**
+
+Custom error class used for reporting parsing errors
 
 ### parseHUB3
 
@@ -44,13 +70,22 @@ Parse HUB3 bank report
 #### Examples
 
 ```javascript
-const { parse } = require('@extensionengine/hub3');
+const { HUB3Error, parse } = require('@extensionengine/hub3');
+const path = require('path');
 const { readFileSync } = require('fs');
 
-const hub3 = readFileSync('./reports/1110779471-20200826.mn');
-const records = parse(hub3);
-console.log({ records });
+const hub3 = readFileSync(path.join(__dirname, '../reports/1110779471-20200826.mn'));
+try {
+  const records = parse(hub3);
+  console.log({ records });
+} catch (err) {
+  if (!HUB3Error.isHUB3Error(err)) throw err;
+  console.error('Failed to parse report:', err.message);
+  process.exit(1);
+}
 ```
+
+-   Throws **[ParserError](#parsererror)** 
 
 Returns **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[LineRecord](#linerecord)>** array of line records
 

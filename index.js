@@ -1,3 +1,4 @@
 'use strict';
 
-exports.parse = require('./parse');
+module.exports = Object.assign({}, require('./errors'));
+module.exports.parse = require('./parse');
