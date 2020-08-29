@@ -1,6 +1,6 @@
 {
   "name": "@extensionengine/hub3",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Parse HUB3 formatted bank reports",
   "keywords": [
     "HUB3"
